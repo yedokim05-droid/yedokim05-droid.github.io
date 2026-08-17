@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="브라우저 안에서 안전하게 진행하는 성인 ADHD 자가 선별검사">
+    <meta name="theme-color" content="#f8fafc">
+    <title>성인 ADHD 자가검사</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script defer src="js/questions.js"></script>
+    <script defer src="js/result.js"></script>
+    <script defer src="js/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+
+    <main id="main-content" class="app-shell">
+      <div class="dot-backdrop" aria-hidden="true">
+        <div class="dot-orbit dot-orbit--hero" data-dot-orbit></div>
+      </div>
+
+      <section id="intro-screen" class="screen screen--center is-active" aria-labelledby="intro-message" tabindex="-1">
+        <div class="screen__content intro-content">
+          <p id="intro-message" class="intro-message" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="name-screen" class="screen screen--center" aria-labelledby="name-title" tabindex="-1" hidden>
+        <div class="screen__content form-panel">
+          <span class="trace-logo trace-logo--form"><img src="png/trace.png" alt="TRACE"></span>
+          <h1 id="name-title">검사를 시작하기 전에<br>이름을 알려주세요.</h1>
+          <p class="lead">입력한 이름은 리포트 작성에만 사용되며 서버에 저장되지 않습니다.</p>
+
+          <form id="name-form" class="name-form" novalidate>
+            <label for="user-name">이름</label>
+            <input id="user-name" name="name" type="text" maxlength="20" autocomplete="name" placeholder="이름을 입력해주세요" required aria-describedby="name-error">
+            <p id="name-error" class="field-error" role="alert"></p>
+            <button class="button button--primary button--wide" type="submit">시작하기</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="guide-screen" class="screen screen--center" aria-labelledby="guide-title" tabindex="-1" hidden>
+        <div class="screen__content content-panel content-panel--narrow">
+          <div class="eyebrow">검사 안내</div>
+          <h1 id="guide-title">검사는 총 18문항입니다.</h1>
+          <p class="guide-copy">본 검사는 성인 ADHD 관련 증상을 스스로 확인하기 위한<br>자가보고형 선별검사입니다.</p>
+          <p class="guide-subcopy">최근 6개월 동안의 경험을 기준으로<br>나에게 가장 가까운 답을 선택해주세요.</p>
+          <div class="time-chip" aria-label="예상 소요 시간 약 3분">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            약 3분
+          </div>
+          <p class="notice-copy">본 검사만으로 ADHD를 진단하거나 배제할 수 없습니다.<br>정확한 진단은 정신건강의학과 등 의료기관에서<br>전문적인 평가를 통해 이루어집니다.</p>
+          <button id="start-quiz-button" class="button button--primary button--wide" type="button">검사 시작</button>
+          <div class="ad-slot" aria-label="광고 영역"><span>Advertisement</span></div>
+        </div>
+      </section>
+
+      <div id="quiz-flow-header" class="quiz-flow-header" aria-hidden="true" hidden>
+        <header class="quiz-header">
+          <div class="quiz-brand" aria-label="TRACE 성인 ADHD 자가검사">
+            <span class="trace-logo trace-logo--quiz" aria-hidden="true"><img src="png/trace.png" alt=""></span>
+          </div>
+          <span id="question-counter" class="question-counter">01 / 18</span>
+        </header>
+        <div class="progress-track" role="progressbar" aria-label="검사 진행률" aria-valuemin="1" aria-valuemax="18" aria-valuenow="1">
+          <span id="progress-bar"></span>
+        </div>
+      </div>
+
+      <section id="quiz-screen" class="screen quiz-screen" aria-labelledby="question-text" tabindex="-1" hidden>
+        <div class="quiz-layout">
+          <div id="question-card" class="question-card">
+            <div class="question-meta">
+              <span id="question-part" class="part-chip">PART A</span>
+              <span class="question-focus-label">FOCUS CHECK</span>
+            </div>
+            <h1 id="question-text"></h1>
+            <fieldset class="answer-fieldset">
+              <legend class="sr-only">가장 가까운 답변을 선택하세요</legend>
+              <div id="answer-options" class="answer-options"></div>
+            </fieldset>
+            <button id="previous-button" class="text-button" type="button">← 이전 질문</button>
+          </div>
+          <p id="selection-status" class="sr-only" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="half-screen" class="screen half-screen" aria-labelledby="half-title" tabindex="-1" hidden>
+        <div class="half-layout">
+          <div class="half-content-wrap">
+            <div class="screen__content content-panel half-card">
+              <div class="eyebrow">HALFWAY POINT</div>
+              <h1 id="half-title">잠시 쉬어가셔도 좋습니다</h1>
+              <p class="lead">검사의 절반을 지나왔습니다<br>남은 9문항을 이어가세요</p>
+              <div class="ad-slot ad-slot--large" aria-label="광고 영역"><span>Advertisement</span></div>
+              <button id="continue-button" class="button button--primary button--wide" type="button">계속하기</button>
+              <button id="half-previous-button" class="text-button" type="button">← 이전 질문으로 돌아가기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="processing-screen" class="screen screen--center" aria-labelledby="processing-message" tabindex="-1" hidden>
+        <div class="screen__content processing-content">
+          <p id="processing-message" class="intro-message processing-message" aria-live="polite"></p>
+          <div id="processing-actions" class="processing-actions" hidden>
+            <h1><span id="completed-user-name"></span> 님의<br>ADHD 결과 해석 리포트가 완성되었습니다.</h1>
+            <p class="processing-actions__pdf">완성된 리포트는 3P 분량 PDF 파일로 다운로드 받으실 수 있습니다.</p>
+            <div class="processing-actions__support">
+              <p>TRACE는 광고 수익을 통해 무료 서비스를 운영하고 있습니다.</p>
+              <p>광고 수익은 서비스 운영과 개선에 사용됩니다.</p>
+            </div>
+            <div class="processing-actions__buttons">
+              <button id="view-result-button" class="button button--primary button--wide" type="button">리포트 확인 바로가기</button>
+              <button id="view-ad-button" class="button button--secondary button--wide" type="button">광고 클릭 후 리포트 바로가기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ad-screen" class="screen screen--center" aria-labelledby="ad-screen-title" tabindex="-1" hidden>
+        <div class="screen__content content-panel content-panel--narrow support-ad-panel">
+          <div class="eyebrow">SUPPORT TRACE</div>
+          <h1 id="ad-screen-title">광고를 함께 봐주셔서 감사합니다.</h1>
+          <p class="lead">보내주신 관심은 TRACE 서비스를 계속 제작하고 개선하는 데 큰 도움이 됩니다.</p>
+          <div class="ad-slot ad-slot--support" aria-label="광고 영역"><span>Advertisement</span></div>
+          <button id="ad-result-button" class="button button--primary button--wide" type="button">리포트 확인 바로가기</button>
+        </div>
+      </section>
+
+      <section id="result-screen" class="screen result-screen" aria-labelledby="result-title" tabindex="-1" hidden>
+        <div class="result-shell">
+          <div id="report-content" class="report-content">
+            <div class="report-page report-page--one" data-pdf-page="1">
+              <header class="report-header">
+                <div class="report-brand">
+                  <span class="trace-logo trace-logo--report"><img src="png/trace.png" alt="TRACE"></span>
+                  <p class="report-kicker">RESULT REPORT</p>
+                </div>
+                <div class="report-date">
+                  <span>검사일</span>
+                  <strong id="result-date"></strong>
+                </div>
+              </header>
+
+              <section class="report-intro" aria-labelledby="result-title">
+                <p>검사를 완료했습니다.</p>
+                <h1 id="result-title"><span id="result-name"></span> 님의 검사 결과</h1>
+                <p class="report-intro__subtitle">지난 6개월의 경험을 바탕으로, 현재의 집중과 행동 패턴을 살펴보았습니다.</p>
+              </section>
+
+              <section class="report-section report-section--info" aria-labelledby="adhd-info-title">
+                <span class="section-index">01</span>
+                <div class="report-section__content">
+                  <header class="report-section__header">
+                    <h2 id="adhd-info-title">ADHD란?</h2>
+                    <p>주의력결핍 과잉행동장애에 대한 기본적인 이해</p>
+                  </header>
+                  <p class="report-section__body">ADHD는 Attention-Deficit/Hyperactivity Disorder, 즉 주의력결핍 과잉행동장애를 의미합니다. 주의집중의 어려움, 충동성, 과도한 활동성이나 안절부절못함 등이 지속되어 일상생활에 영향을 줄 수 있는 신경발달장애입니다. 성인에서는 일정 관리, 업무 시작과 마무리, 집중 유지, 충동 조절 등의 어려움으로 나타날 수 있습니다.</p>
+                </div>
+              </section>
+
+              <section class="report-section report-section--score" aria-labelledby="primary-result-title">
+                <span class="section-index">02</span>
+                <div class="report-section__content">
+                  <header class="report-section__header">
+                    <h2 id="primary-result-title">핵심 선별 결과</h2>
+                    <p><strong>PART A</strong> · 성인 ADHD의 핵심 증상 패턴을 확인합니다</p>
+                  </header>
+                  <div class="score-result">
+                    <div class="score-result__copy">
+                      <div class="score-line"><strong id="part-a-score">0</strong><span>/ 6</span></div>
+                      <p id="part-a-summary" class="report-section__body"></p>
+                    </div>
+                    <div class="score-ring" aria-hidden="true">
+                      <svg viewBox="0 0 120 120">
+                        <circle class="score-ring__track" cx="60" cy="60" r="48"></circle>
+                        <circle id="score-ring-value" class="score-ring__value" cx="60" cy="60" r="48"></circle>
+                      </svg>
+                      <span id="score-ring-label">0/6</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="report-section report-section--score" aria-labelledby="part-b-result-title">
+                <span class="section-index">03</span>
+                <div class="report-section__content">
+                  <header class="report-section__header">
+                    <h2 id="part-b-result-title">추가 증상 결과</h2>
+                    <p><strong>PART B</strong> · 보다 폭넓은 증상 경험을 함께 살펴봅니다</p>
+                  </header>
+                  <div class="score-result">
+                    <div class="score-result__copy">
+                      <div class="score-line"><strong id="part-b-score">0</strong><span>/ 12</span></div>
+                      <p id="part-b-summary" class="report-section__body"></p>
+                      <p class="part-b-result__notice">Part B에는 공식적인 컷오프가 없으며, 이 수치는 증상의 범위를 살펴보기 위한 참고 정보입니다.</p>
+                    </div>
+                    <div class="score-ring" aria-hidden="true">
+                      <svg viewBox="0 0 120 120">
+                        <circle class="score-ring__track" cx="60" cy="60" r="48"></circle>
+                        <circle id="part-b-ring-value" class="score-ring__value" cx="60" cy="60" r="48"></circle>
+                      </svg>
+                      <span id="part-b-ring-label">0/12</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <span class="report-page-number" aria-hidden="true">01 / 03</span>
+            </div>
+
+            <div class="report-page report-page--two" data-pdf-page="2">
+              <header class="report-page-header"><span class="trace-logo trace-logo--report"><img src="png/trace.png" alt="TRACE"></span><span>RESULT REPORT · 02</span></header>
+              <section class="report-section report-section--summary" aria-labelledby="summary-title">
+                <div class="section-index">05</div>
+                <div class="report-section__content">
+                  <header class="report-section__header">
+                    <h2 id="summary-title">응답 요약</h2>
+                    <p>18개 문항에서 기준에 해당한 응답을 한눈에 확인합니다</p>
+                  </header>
+                  <div class="summary-grid">
+                    <article class="summary-card">
+                      <div><span>PART A</span><strong>핵심 선별 항목</strong></div>
+                      <p><b id="summary-a">0</b> / 6</p>
+                      <div class="mini-track"><span id="summary-a-bar"></span></div>
+                    </article>
+                    <article class="summary-card">
+                      <div><span>PART B</span><strong>추가 증상 항목</strong></div>
+                      <p><b id="summary-b">0</b> / 12</p>
+                      <div class="mini-track"><span id="summary-b-bar"></span></div>
+                    </article>
+                    <article class="summary-card summary-card--accent">
+                      <div><span>TOTAL</span><strong>전체 기준 충족 항목</strong></div>
+                      <p><b id="summary-total">0</b> / 18</p>
+                      <div class="mini-track"><span id="summary-total-bar"></span></div>
+                    </article>
+                  </div>
+                </div>
+              </section>
+
+              <section class="report-section report-section--interpretation" aria-labelledby="interpretation-title">
+                <div class="section-index">06</div>
+                <div class="report-section__content interpretation__content">
+                  <header class="report-section__header">
+                    <h2 id="interpretation-title">결과 해석</h2>
+                    <p>응답에서 나타난 특징과 그 의미를 살펴봅니다</p>
+                  </header>
+                  <h3 id="interpretation-heading"></h3>
+                  <div id="interpretation-copy" class="interpretation__clinical"></div>
+                </div>
+              </section>
+              <span class="report-page-number" aria-hidden="true">02 / 03</span>
+            </div>
+
+            <div class="report-page report-page--three" data-pdf-page="3">
+              <header class="report-page-header"><span class="trace-logo trace-logo--report"><img src="png/trace.png" alt="TRACE"></span><span>RESULT REPORT · 03</span></header>
+              <section class="report-section report-section--answers" aria-labelledby="answers-heading">
+                <div class="section-index">07</div>
+                <div class="report-section__content">
+                  <header class="report-section__header">
+                    <h2 id="answers-heading">내 응답 확인</h2>
+                    <p>18개 문항에 선택한 답변을 다시 확인할 수 있습니다</p>
+                  </header>
+                  <h3 id="answers-meta" class="answers-list__title"></h3>
+                  <ol id="answers-list" class="answers-list" aria-labelledby="answers-meta"></ol>
+                </div>
+              </section>
+
+              <div class="report-page-notices">
+                <aside class="tool-notice" aria-labelledby="tool-info-title">
+                  <strong id="tool-info-title">검사 도구 및 안내</strong>
+                  <div class="tool-notice__copy">
+                    <p>WHO 성인 ADHD 자가보고척도(ASRS-v1.1)의 18문항 선별 구조와 문항별 기준값을 바탕으로 결과를 계산합니다. Part B는 추가 증상 정보이며 별도의 심각도 판정에 사용하지 않습니다.</p>
+                    <p>본 검사는 성인 ADHD 증상 선별을 위한 참고 자료이며, 의료인의 진단을 대신하지 않습니다. 검사 결과만으로 ADHD 여부를 확정하거나 배제할 수 없습니다.</p>
+                  </div>
+                </aside>
+              </div>
+              <p class="closing-message">지금까지 반복되어 온 불편함이 있다면, 이번 결과가 그 경험을 조금 더 구체적으로 이해하는 계기가 되기를 바랍니다.</p>
+              <span class="report-page-number" aria-hidden="true">03 / 03</span>
+            </div>
+          </div>
+
+          <div class="result-actions">
+            <button id="kakao-share-button" class="button button--kakao" type="button" disabled aria-busy="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path d="M12 4.5c-5 0-9 3.1-9 7 0 2.5 1.7 4.7 4.3 5.9L6.2 21l4.2-2.5c.5.1 1 .1 1.6.1 5 0 9-3.1 9-7s-4-7.1-9-7.1Z" fill="currentColor"/>
+              </svg>
+              <span id="kakao-share-label">공유용 PDF 준비 중…</span>
+            </button>
+            <button id="pdf-button" class="button button--primary" type="button">
+              <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              3P PDF 리포트 다운로드
+            </button>
+            <button id="restart-button" class="button button--secondary" type="button">다시 검사하기</button>
+          </div>
+          <p id="action-status" class="action-status" role="status" aria-live="polite"></p>
+          <div class="ad-slot ad-slot--result" aria-label="광고 영역"><span>Advertisement</span></div>
+          <footer class="site-footer">입력한 이름과 응답은 서버로 전송되거나 저장되지 않습니다.</footer>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
